@@ -13,5 +13,10 @@ setup(
     zip_safe=False,
     install_requires=[
         'flask',
+        'pytest',
+        'coverage',
+        'celery',
+        'flask-celery-helper',  # Flask官网上的flask-celery包可能因为长期未维护的原因，在应用中与python的celery包存在兼容问题
+        'redis'
     ],
 )
