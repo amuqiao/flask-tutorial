@@ -3,26 +3,11 @@
 # @Author  : wangqiao
 
 from celery.schedules import crontab
-from datetime import timedelta
+
 import os
 from flask import Flask
 from celery import Celery
-
-
-def make_celery(app):
-    # celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'], include=['flaskr.celery_tasks.scripts'])
-    celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'], include=app.config['CELERY_TASK_PATH'])
-    celery.conf.update(app.config)
-    TaskBase = celery.Task
-
-    class ContextTask(TaskBase):
-        abstract = True
-
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return TaskBase.__call__(self, *args, **kwargs)
-    celery.Task = ContextTask
-    return celery
+from flaskr.celery_tasks.tasks import make_celery
 
 
 def create_app(test_config=None):
@@ -32,18 +17,7 @@ def create_app(test_config=None):
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
     )
-    # # celery ====
-    # app.config.update(
-    #     CELERY_BROKER_URL='redis://localhost:6379',
-    #     CELERY_RESULT_BACKEND='redis://localhost:6379'
-    # )
-    # celery = make_celery(app)
-    #
-    # @celery.task
-    # def add_together(a, b):
-    #     return a + b
-    #
-    # # celery ====
+
     if test_config is None:
         # load the instance config, if it exists, when not testing
         app.config.from_pyfile('config.py', silent=True)
@@ -77,38 +51,6 @@ def create_app(test_config=None):
 
 
 app = create_app()
-
-app.config.update(
-    CELERY_BROKER_URL='redis://localhost:6379',  # Broker 地址
-    CELERY_RESULT_BACKEND='redis://localhost:6379',  # 结果存储地址
-    # 定时任务，
-    CELERYBEAT_SCHEDULE={
-        # 'task1': {
-        #     'task': 'flaskr.tasks.test_task',
-        #     # "schedule": timedelta(seconds=5),
-        #     'schedule': timedelta(seconds=5),
-        #     "args": '',
-        # },
-        # 'task2': {
-        #     'task': 'flaskr.tasks.test_task1',
-        #     "schedule": timedelta(seconds=10),
-        #     "args": '',
-        # },
-        'task3': {
-            'task': 'flaskr.celery_tasks.scripts.test1.test_task1',
-            # "schedule": timedelta(seconds=5),
-            'schedule': timedelta(seconds=5),
-            "args": '',
-        },
-        'task4': {
-            'task': 'flaskr.celery_tasks.scripts.test2.test_task2',
-            "schedule": timedelta(seconds=10),
-            "args": '',
-        },
-    },
-    CELERY_TASK_PATH=['flaskr.celery_tasks.scripts.test1', 'flaskr.celery_tasks.scripts.test2']
-)
-
 
 celery_ob = make_celery(app)
 # # 导入celery的配置信息
